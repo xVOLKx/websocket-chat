@@ -1,5 +1,9 @@
 # Веб-сокеты чат (Node.js + Socket.io)
 
+## Живой пример
+
+👉 [https://websocket-chat-mkd1.onrender.com](https://websocket-chat-mkd1.onrender.com)
+
 Простой чат для демонстрации работы веб-сокетов.
 
 ## Как 🚀 запустить локально
