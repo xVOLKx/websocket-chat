@@ -19,7 +19,7 @@
     node server.js
     ```
 5. Открой в браузере:
-
+    http://localhost:3000
 🛠️ Технологии
 
 · Node.js
