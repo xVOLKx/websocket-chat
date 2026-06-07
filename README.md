@@ -20,8 +20,9 @@
     ```
 5. Открой в браузере:
     http://localhost:3000
+
 🛠️ Технологии
 
-· Node.js
-· Express
-· Socket.io
+. Node.js
+. Express
+. Socket.io
