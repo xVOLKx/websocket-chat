@@ -9,12 +9,22 @@
         .msg { margin: 5px 0; }
         .time { font-size: 12px; color: gray; margin-left: 10px; }
         input, button { padding: 8px; }
-        input { width: 80%; }
+        input { width: 70%; }
+        #typing-status { font-style: italic; color: gray; height: 20px; }
+        .room-panel { margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <h2>Чат (исправленный)</h2>
+
+    <div class="room-panel">
+        <input id="roomInput" placeholder="Название комнаты" />
+        <button id="joinRoomBtn">Присоединиться</button>
+    </div>
+
+    <h2>Чат</h2>
     <div id="messages"></div>
+    <div id="typing-status"></div>
+
     <input type="text" id="input" placeholder="Введите сообщение...">
     <button id="send">Отправить</button>
 
@@ -24,31 +34,54 @@
         const messagesDiv = document.getElementById('messages');
         const input = document.getElementById('input');
         const sendBtn = document.getElementById('send');
+        const roomInput = document.getElementById('roomInput');
+        const joinRoomBtn = document.getElementById('joinRoomBtn');
+        const typingStatus = document.getElementById('typing-status');
+
+        // Присоединение к комнате
+        joinRoomBtn.onclick = () => {
+            const room = roomInput.value.trim() || 'default';
+            socket.emit('join-room', room);
+            typingStatus.textContent = `Вы в комнате: ${room}`;
+        };
 
         function addMessage(msg) {
             const div = document.createElement('div');
             div.className = 'msg';
-            div.innerHTML = '<strong>Аноним:</strong> ' + msg.text + ' <span class="time">' + msg.time + '</span>';
+            div.innerHTML = `<strong>Аноним:</strong> ${msg.text} <span class="time">${msg.time}</span>`;
             messagesDiv.appendChild(div);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        socket.on('history', (history) => {
-            history.forEach(addMessage);
-        });
-
+        socket.on('history', (history) => history.forEach(addMessage));
         socket.on('chat message', addMessage);
+
+        // Статус «печатает»
+        socket.on('user-typing', () => {
+            typingStatus.textContent = '✏️ Пользователь печатает...';
+            setTimeout(() => {
+                typingStatus.textContent = '';
+            }, 2000);
+        });
 
         sendBtn.onclick = () => {
             const text = input.value.trim();
             if (text) {
-                socket.emit('chat message', text);
+                socket.emit('chat message', { text: text });
                 input.value = '';
             }
         };
 
         input.onkeypress = (e) => {
             if (e.key === 'Enter') sendBtn.onclick();
+        };
+
+        // Отправка статуса "печатает"
+        let typingTimeout;
+        input.oninput = () => {
+            socket.emit('typing');
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {}, 3000);
         };
     </script>
 </body>

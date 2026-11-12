@@ -1,18 +1,10 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-// ОБЯЗАТЕЛЬНЫЕ НАСТРОЙКИ для socket.io на Render
-const io = socketIo(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    },
-    transports: ['websocket', 'polling'] // Разрешаем оба транспорта
-});
+const io = socketIo(server);
 
 app.use(express.static('public'));
 
@@ -23,10 +15,30 @@ io.on('connection', (socket) => {
 
     socket.emit('history', messages);
 
-    socket.on('chat message', (msg) => {
-        const fullMsg = { text: msg, time: new Date().toLocaleTimeString() };
+    socket.on('join-room', (room) => {
+        const rooms = Array.from(socket.rooms);
+        rooms.forEach(r => {
+            if (r !== socket.id) socket.leave(r);
+        });
+        socket.join(room);
+        socket.data.room = room;
+        console.log(`✅ Пользователь вошёл в комнату: ${room}`);
+    });
+
+    socket.on('chat message', (data) => {
+        const room = socket.data.room || 'default';
+        const fullMsg = {
+            text: data.text,
+            time: new Date().toLocaleTimeString()
+        };
         messages.push(fullMsg);
-        io.emit('chat message', fullMsg);
+        io.to(room).emit('chat message', fullMsg);
+        console.log(`📩 Сообщение в комнату ${room}: ${data.text}`);
+    });
+
+    socket.on('typing', () => {
+        const room = socket.data.room || 'default';
+        socket.to(room).emit('user-typing');
     });
 
     socket.on('disconnect', () => {
@@ -36,5 +48,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Чат запущен на порту ${PORT}`);
+    console.log(`🚀 Чат запущен на порту ${PORT}`);
 });
